@@ -7,9 +7,9 @@ let mainWindow;
 let resizeInterval;
 const dataPath = path.join(app.getPath('userData'), 'notes_data.json');
 
-const singleInstanceLock = app.requestSingleInstanceLock();
+const gotTheLock = app.requestSingleInstanceLock();
 
-if (!singleInstanceLock) {
+if (!gotTheLock) {
     app.quit();
 } else {
     app.on('second-instance', (event, commandLine) => {
@@ -17,9 +17,9 @@ if (!singleInstanceLock) {
             if (mainWindow.isMinimized()) mainWindow.restore();
             mainWindow.focus();
 
-            const filePath = commandLine.pop();
-            if (filePath && filePath.endsWith('.txt')) {
-                processExternalFile(filePath);
+            const filePath = commandLine.find(arg => arg.endsWith('.txt'));
+            if (filePath) {
+                openExternalFile(filePath);
             }
         }
     });
@@ -46,22 +46,8 @@ function createWindow() {
     mainWindow.webContents.on('did-finish-load', () => {
         const filePath = process.argv.find(arg => arg.endsWith('.txt'));
         if (filePath) {
-            processExternalFile(filePath);
+            openExternalFile(filePath);
         }
-    });
-
-    ipcMain.on('window-close', () => mainWindow.close());
-    ipcMain.on('window-minimize', () => mainWindow.minimize());
-    
-    ipcMain.on('window-pin', (event) => {
-        const isPinned = mainWindow.isAlwaysOnTop();
-        mainWindow.setAlwaysOnTop(!isPinned);
-        event.reply('pin-status', !isPinned);
-    });
-
-    ipcMain.on('settings-mode', (event, isActive) => {
-        const targetWidth = isActive ? 550 : 900;
-        animateWindowWidth(mainWindow, targetWidth, 350);
     });
 
     ipcMain.handle('get-stored-notes', () => {
@@ -82,7 +68,6 @@ function createWindow() {
             defaultPath: `${title || 'Note'}.txt`,
             filters: [{ name: 'Text Files', extensions: ['txt'] }]
         });
-        
         if (filePath) {
             fs.writeFileSync(filePath, content, 'utf-8');
             return true;
@@ -96,36 +81,71 @@ function createWindow() {
             filters: [{ name: 'Text Files', extensions: ['txt'] }],
             properties: ['openFile']
         });
-        
         if (filePaths && filePaths.length > 0) {
-            return readTextData(filePaths[0]);
+            return readTextFile(filePaths[0]);
         }
         return null;
+    });
+
+    ipcMain.handle('export-pdf', async (event, title) => {
+        const { filePath } = await dialog.showSaveDialog(mainWindow, {
+            title: 'Export as PDF',
+            defaultPath: `${title || 'Note'}.pdf`,
+            filters: [{ name: 'PDF Files', extensions: ['pdf'] }]
+        });
+
+        if (filePath) {
+            const options = {
+                marginsType: 0,
+                pageSize: 'A4',
+                printBackground: true,
+                printSelectionOnly: false,
+                landscape: false
+            };
+            try {
+                const data = await mainWindow.webContents.printToPDF(options);
+                fs.writeFileSync(filePath, data);
+                return true;
+            } catch (error) {
+                console.error(error);
+                return false;
+            }
+        }
+        return false;
+    });
+
+    ipcMain.on('window-close', () => mainWindow.close());
+    ipcMain.on('window-minimize', () => mainWindow.minimize());
+    
+    ipcMain.on('window-pin', (event) => {
+        const isPinned = mainWindow.isAlwaysOnTop();
+        mainWindow.setAlwaysOnTop(!isPinned);
+        event.reply('pin-status', !isPinned);
+    });
+
+    ipcMain.on('settings-mode', (event, isActive) => {
+        const targetWidth = isActive ? 550 : 900;
+        animateWindow(mainWindow, targetWidth, 350);
     });
 
     autoUpdater.checkForUpdatesAndNotify();
 }
 
-function readTextData(filePath) {
-    try {
-        const content = fs.readFileSync(filePath, 'utf-8');
-        const title = path.basename(filePath, '.txt');
-        return { title, content };
-    } catch (error) {
-        return null;
-    }
+function readTextFile(filePath) {
+    const content = fs.readFileSync(filePath, 'utf-8');
+    const title = path.basename(filePath, '.txt');
+    return { title, content };
 }
 
-function processExternalFile(filePath) {
-    const fileData = readTextData(filePath);
-    if (fileData) {
+function openExternalFile(filePath) {
+    const fileData = readTextFile(filePath);
+    if (mainWindow) {
         mainWindow.webContents.send('external-file-open', fileData);
     }
 }
 
-function animateWindowWidth(win, targetWidth, duration) {
+function animateWindow(win, targetWidth, duration) {
     if (resizeInterval) clearInterval(resizeInterval);
-
     const startBounds = win.getBounds();
     const startWidth = startBounds.width;
     const distance = targetWidth - startWidth;
@@ -135,12 +155,10 @@ function animateWindowWidth(win, targetWidth, duration) {
     resizeInterval = setInterval(() => {
         const elapsed = Date.now() - startTime;
         let progress = elapsed / duration;
-
         if (progress >= 1) {
             progress = 1;
             clearInterval(resizeInterval);
         }
-
         const currentWidth = Math.round(startWidth + (distance * easeOut(progress)));
         win.setBounds({
             x: startBounds.x,
@@ -151,6 +169,7 @@ function animateWindowWidth(win, targetWidth, duration) {
     }, 16);
 }
 
+// Auto-Updater
 autoUpdater.on('update-available', (info) => {
     mainWindow.webContents.send('update-available', {
         currentVersion: app.getVersion(),

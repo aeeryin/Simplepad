@@ -414,18 +414,15 @@ tagButtons.forEach(btn => {
 });
 
 document.addEventListener('keydown', (e) => {
-    // Bloquear F12 e DevTools
     if (e.key === 'F12' || ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key.toLowerCase() === 'i' || e.key.toLowerCase() === 'c'))) {
         e.preventDefault();
         return;
     }
 
-    // SALVAR EM .TXT (Ctrl + S)
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
         e.preventDefault();
         const note = notes.find(n => n.id === currentNoteId);
         
-        // Se existe uma nota e ela não está com a tela de senha na frente, SALVA
         if (note && passwordOverlay.classList.contains('hidden')) {
             ipcRenderer.invoke('file-save', note.title, note.content).then(success => {
                 if (success) console.log('File Saved');
@@ -433,7 +430,6 @@ document.addEventListener('keydown', (e) => {
         }
     }
 
-    // ABRIR .TXT (Ctrl + O)
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'o') {
         e.preventDefault();
         ipcRenderer.invoke('file-open').then(fileData => {
@@ -460,12 +456,10 @@ document.addEventListener('keydown', (e) => {
         });
     }
 
-    // Atalhos de abas 1-9
     if ((e.ctrlKey || e.metaKey) && e.key >= '1' && e.key <= '9') {
         const index = parseInt(e.key) - 1; 
         if (notes[index]) { e.preventDefault(); openNote(notes[index].id); }
     }
-    // Novo (Ctrl + T) e Fechar (Ctrl + W)
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 't') { e.preventDefault(); createNote(); }
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'w') {
         e.preventDefault();
@@ -479,3 +473,69 @@ document.getElementById('btn-pin').addEventListener('click', () => ipcRenderer.s
 ipcRenderer.on('pin-status', (e, isPinned) => document.getElementById('btn-pin').classList.toggle('window-btn-active', isPinned));
 
 applyTranslation(currentLang);
+textEditor.addEventListener('paste', (e) => {
+    const paste = (e.clipboardData || window.clipboardData).getData('text');
+    const ytRegex = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]+)/g;
+    
+    if (ytRegex.test(paste)) {
+        e.preventDefault();
+        const newText = paste.replace(ytRegex, (match) => `[🎥 Video: ${match}](${match})`);
+        const start = textEditor.selectionStart;
+        const end = textEditor.selectionEnd;
+        textEditor.value = textEditor.value.substring(0, start) + newText + textEditor.value.substring(end);
+        const note = notes.find(n => n.id === currentNoteId);
+        if (note) { note.content = textEditor.value; persistNotes(); }
+    }
+});
+
+const searchBar = document.getElementById('search-bar');
+const searchInput = document.getElementById('search-input');
+
+document.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'f') {
+        e.preventDefault();
+        if (currentNoteId) {
+            searchBar.classList.toggle('hidden');
+            if (!searchBar.classList.contains('hidden')) searchInput.focus();
+        }
+    }
+});
+
+searchInput.addEventListener('input', () => {
+    const query = searchInput.value.toLowerCase();
+    const content = textEditor.value.toLowerCase();
+    if (!query) { document.getElementById('search-results').textContent = "0/0"; return; }
+    
+    const count = (content.match(new RegExp(query, 'g')) || []).length;
+    document.getElementById('search-results').textContent = `${count} matches`;
+    
+    const index = content.indexOf(query);
+    if (index !== -1) {
+        textEditor.focus();
+        textEditor.setSelectionRange(index, index + query.length);
+    }
+});
+
+document.getElementById('btn-close-search').onclick = () => searchBar.classList.add('hidden');
+
+document.getElementById('btn-pdf').onclick = () => {
+    const note = notes.find(n => n.id === currentNoteId);
+    if (note) {
+        if (!isPreviewMode) btnPreview.click();
+        
+        setTimeout(() => {
+            ipcRenderer.invoke('export-pdf', note.title || 'Note').then(success => {
+                if (success) console.log('PDF Exported');
+            });
+        }, 100);
+    }
+};
+
+ipcRenderer.on('external-file-open', (event, data) => {
+    const existing = notes.find(n => n.title === data.title && n.content === data.content);
+    if (existing) {
+        openNote(existing.id);
+    } else {
+        createNote(data);
+    }
+});

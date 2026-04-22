@@ -1,6 +1,6 @@
 {
   "name": "simplepad",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Simplepad Note App",
   "main": "main.js",
   "scripts": {
