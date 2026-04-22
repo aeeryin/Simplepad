@@ -1,0 +1,43 @@
+{
+  "name": "simplepad",
+  "version": "1.0.0",
+  "description": "Simplepad Note App",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder --win",
+    "publish": "electron-builder --win -p always"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/aeeryin/Simplepad"
+  },
+  "build": {
+    "appId": "com.aeeryin.simplepad",
+    "fileAssociations": [
+      {
+        "ext": "txt",
+        "name": "Text Document",
+        "role": "Editor",
+        "icon": "icon.png"
+      }
+    ],
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "aeeryin",
+        "repo": "Simplepad"
+      }
+    ],
+    "win": {
+      "target": "nsis"
+    }
+  },
+  "dependencies": {
+    "electron-updater": "^6.1.8"
+  },
+  "devDependencies": {
+    "electron": "^30.0.0",
+    "electron-builder": "^24.13.3"
+  }
+}
