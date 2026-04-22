@@ -45,7 +45,7 @@ function createWindow() {
 
     mainWindow.webContents.on('did-finish-load', () => {
         mainWindow.webContents.send('update-available', {
-            currentVersion: '1.0.0',
+            currentVersion: '1.0.1',
             latestVersion: '1.0.2'
         });
 
@@ -60,6 +60,10 @@ function createWindow() {
             return JSON.parse(fs.readFileSync(dataPath, 'utf-8'));
         }
         return [];
+    });
+
+    ipcMain.handle('get-app-version', () => {
+    return app.getVersion();
     });
 
     ipcMain.handle('save-stored-notes', (event, notes) => {
@@ -184,7 +188,11 @@ autoUpdater.on('update-downloaded', () => {
     mainWindow.webContents.send('update-ready');
 });
 
-ipcMain.on('install-update', () => autoUpdater.quitAndInstall());
+ipcMain.on('install-update', () => {
+    autoUpdater.downloadUpdate().then(() => {
+        autoUpdater.quitAndInstall();
+    });
+});
 
 app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') app.quit();

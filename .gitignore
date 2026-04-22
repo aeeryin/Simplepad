@@ -1,4 +1,14 @@
+# Segredos e Tokens
+.env
+dev-update.yml
+
+# Dependências
 node_modules/
+
+# Pasta de Build (Instaladores)
 dist/
-build/
-*.exe
+
+# Logs e arquivos do sistema
+*.log
+.DS_Store
+Thumbs.db

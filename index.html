@@ -23,7 +23,7 @@
         <div id="update-banner" class="update-banner hidden">
             <div class="update-text">
                 <span data-i18n="update_available">New update available!</span>
-                <strong id="update-versions">v1.0.0 ➔ v1.0.1</strong>
+                <strong id="update-versions">v1.0.1 ➔ v1.0.2</strong>
             </div>
             <div style="display: flex; gap: 8px;">
                 <button id="btn-update-download" class="action-btn" style="padding: 4px 10px; font-size: 11px;" data-i18n="btn_download_update">Download</button>
@@ -54,7 +54,6 @@
                 </div>
 
                 <div id="note-editor" class="note-editor hidden">
-                    
                     <div id="password-overlay" class="password-overlay hidden">
                         <svg viewBox="0 0 24 24" width="48" height="48" stroke="currentColor" stroke-width="2" fill="none"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
                         <h3 data-i18n="modal_unlock_title">Note Locked</h3>
@@ -96,7 +95,7 @@
                     </div>
 
                     <div id="search-bar" class="search-bar hidden">
-                        <input type="text" id="search-input" placeholder="Find in note...">
+                        <input type="text" id="search-input" placeholder="Find in current note...">
                         <span id="search-results">0 matches</span>
                         <button id="btn-close-search" class="icon-btn" style="color: var(--text-muted);">✕</button>
                     </div>
@@ -143,11 +142,46 @@
                 </div>
 
                 <div class="setting-item">
-                    <div><span data-i18n="lbl_autosave">Auto-save</span></div>
+                    <div><span data-i18n="lbl_autosave">Auto-save Notes</span></div>
                     <label class="switch">
                         <input type="checkbox" checked>
                         <div class="slider"><div class="slider-knob"></div></div>
                     </label>
+                </div>
+
+                <div class="setting-item">
+                    <div>
+                        <span data-i18n="lbl_markdown">Markdown Mode</span>
+                        <small data-i18n="desc_markdown">Enable quick text formatting.</small>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" checked>
+                        <div class="slider"><div class="slider-knob"></div></div>
+                    </label>
+                </div>
+
+                <div class="setting-item">
+                    <div><span data-i18n="lbl_fontsize">Font Size</span></div>
+                    <select class="meta-select">
+                        <option>12px</option>
+                        <option>14px</option>
+                        <option selected>15px</option>
+                        <option>18px</option>
+                        <option>20px</option>
+                    </select>
+                </div>
+
+                <div class="setting-item">
+                    <div><span data-i18n="lbl_anim">Enable Animations</span></div>
+                    <label class="switch">
+                        <input type="checkbox" checked>
+                        <div class="slider"><div class="slider-knob"></div></div>
+                    </label>
+                </div>
+
+                <div class="setting-item">
+                    <div><span data-i18n="lbl_accent">Accent Color</span></div>
+                    <input type="color" class="meta-color" value="#007acc">
                 </div>
 
                 <div class="setting-item" style="border-bottom: none; margin-top: 20px;">
@@ -155,6 +189,12 @@
                         <button class="action-btn action-btn-outline" data-i18n="btn_export">Export Backup</button>
                         <button class="action-btn action-btn-danger" data-i18n="btn_delete">Delete All</button>
                     </div>
+                </div>
+
+                <div class="settings-footer" style="margin-top: 40px; padding-top: 15px; border-top: 1px solid var(--border-color); text-align: center;">
+                    <small style="color: var(--text-muted); font-size: 11px; letter-spacing: 0.5px;">
+                        Simplepad Professional v<span id="app-version">0.0.0</span>
+                    </small>
                 </div>
             </div>
         </div>

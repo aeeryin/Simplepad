@@ -12,7 +12,7 @@ const noteEditor = document.getElementById('note-editor');
 const tabsContainer = document.getElementById('tabs-container');
 const btnAddTab = document.getElementById('btn-add-tab');
 const btnBigAdd = document.getElementById('btn-big-add');
-const noteHeaderContent = document.getElementById('note-header-content');
+const noteHeaderContent = document.querySelector('.note-header');
 const noteTitle = document.getElementById('note-title');
 const textEditor = document.getElementById('text-editor');
 const textPreview = document.getElementById('text-preview');
@@ -42,53 +42,9 @@ const updateBanner = document.getElementById('update-banner');
 const updateVersions = document.getElementById('update-versions');
 const btnUpdateDownload = document.getElementById('btn-update-download');
 const btnUpdateClose = document.getElementById('btn-update-close');
-
-btnSettings.addEventListener('click', () => {
-    screenNotepad.classList.remove('screen-active');
-    screenNotepad.classList.add('screen-hidden');
-    screenSettings.classList.remove('screen-hidden');
-    screenSettings.classList.add('screen-active');
-    ipcRenderer.send('settings-mode', true);
-});
-
-btnCloseSettings.addEventListener('click', () => {
-    screenSettings.classList.remove('screen-active');
-    screenSettings.classList.add('screen-hidden');
-    screenNotepad.classList.remove('screen-hidden');
-    screenNotepad.classList.add('screen-active');
-    ipcRenderer.send('settings-mode', false);
-    if (currentNoteId !== null && !isPreviewMode) setTimeout(() => textEditor.focus(), 350); 
-});
-
-btnGithub.addEventListener('click', () => shell.openExternal('https://github.com/aeeryin/Simplepad'));
-
-setTheme.addEventListener('change', (e) => {
-    if (e.target.value === 'light') document.body.classList.add('light-theme');
-    else document.body.classList.remove('light-theme');
-});
-
-ipcRenderer.on('update-available', (e, info) => {
-    console.log("Recebi o evento de update!"); // Veja se isso aparece no Console (Ctrl+Shift+I)
-    document.getElementById('update-versions').textContent = `${info.currentVersion} ➔ ${info.latestVersion}`;
-    document.getElementById('update-banner').classList.remove('hidden');
-});
-
-ipcRenderer.on('update-ready', () => {
-    btnUpdateDownload.textContent = currentLang === 'en' ? 'Restart & Install' : 'Reiniciar e Instalar';
-    btnUpdateDownload.dataset.ready = "true";
-    btnUpdateDownload.style.backgroundColor = "#28a745";
-});
-
-btnUpdateClose.addEventListener('click', () => updateBanner.classList.add('hidden'));
-
-btnUpdateDownload.addEventListener('click', () => {
-    if (btnUpdateDownload.dataset.ready === "true") ipcRenderer.send('install-update');
-    else {
-        btnUpdateDownload.textContent = currentLang === 'en' ? 'Downloading...' : 'Baixando...';
-        btnUpdateDownload.style.opacity = "0.7";
-        btnUpdateDownload.disabled = true;
-    }
-});
+const searchBar = document.getElementById('search-bar');
+const searchInput = document.getElementById('search-input');
+const searchResults = document.getElementById('search-results');
 
 const dictionary = {
     'pt': {
@@ -173,13 +129,22 @@ const dictionary = {
     }
 };
 
+ipcRenderer.invoke('get-stored-notes').then(stored => {
+    notes = stored || [];
+    renderTabs();
+});
+
+ipcRenderer.invoke('get-app-version').then(v => {
+    document.getElementById('app-version').innerText = v;
+});
+
 function applyTranslation(lang) {
     currentLang = lang;
     localStorage.setItem('language', lang);
-    setLang.value = lang; 
+    setLang.value = lang;
     document.querySelectorAll('[data-i18n]').forEach(el => {
         const key = el.getAttribute('data-i18n');
-        if (dictionary[lang] && dictionary[lang][key]) {
+        if (dictionary[lang][key]) {
             if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') el.placeholder = dictionary[lang][key];
             else el.textContent = dictionary[lang][key];
         }
@@ -190,12 +155,16 @@ function applyTranslation(lang) {
 
 setLang.addEventListener('change', (e) => applyTranslation(e.target.value));
 
-function createNote() {
+function persistNotes() {
+    ipcRenderer.invoke('save-stored-notes', notes);
+}
+
+function createNote(data = null) {
     if (notes.length >= 9) { alert(dictionary[currentLang]['alert_limit']); return; }
     const newNote = {
-        id: Date.now(),
-        title: '',
-        content: '',
+        id: Date.now().toString(),
+        title: data ? data.title : '',
+        content: data ? data.content : '',
         date: new Date().toLocaleString(),
         color: '#333333',
         tags: [],
@@ -204,6 +173,7 @@ function createNote() {
         history: []
     };
     notes.push(newNote);
+    persistNotes();
     openNote(newNote.id);
     renderTabs();
 }
@@ -213,41 +183,42 @@ function openNote(id) {
     const note = notes.find(n => n.id === id);
     emptyState.classList.add('hidden');
     noteEditor.classList.remove('hidden');
-    modalPassword.classList.add('hidden'); 
+    modalPassword.classList.add('hidden');
     if (note.password) {
         passwordOverlay.classList.remove('hidden');
-        noteHeaderContent.classList.add('hidden');
+        noteHeaderContent.style.visibility = 'hidden';
         textEditor.classList.add('hidden');
         textPreview.classList.add('hidden');
-        inputUnlock.value = ''; 
+        inputUnlock.value = '';
         inputUnlock.focus();
-    } else unlockInterface(note);
+    } else {
+        unlockInterface(note);
+    }
     renderTabs();
 }
 
 function unlockInterface(note) {
     passwordOverlay.classList.add('hidden');
-    noteHeaderContent.classList.remove('hidden');
+    noteHeaderContent.style.visibility = 'visible';
     if (isPreviewMode) {
         textPreview.classList.remove('hidden');
         textPreview.innerHTML = formatText(note.content);
-    } else textEditor.classList.remove('hidden');
+    } else {
+        textEditor.classList.remove('hidden');
+    }
     noteTitle.value = note.title;
     textEditor.value = note.content;
     noteDate.textContent = note.date;
     noteColor.value = note.color;
     btnFavorite.classList.toggle('icon-btn-favorite', note.favorite);
     btnLock.classList.toggle('icon-btn-favorite', note.password !== null);
-    tagButtons.forEach(btn => {
-        const tagId = btn.getAttribute('data-tag');
-        btn.classList.toggle('tag-toggle-active', note.tags.includes(tagId));
-    });
     updateCounter();
-    setTimeout(() => textEditor.focus(), 50); 
+    setTimeout(() => textEditor.focus(), 50);
 }
 
 function closeNote(id) {
     notes = notes.filter(n => n.id !== id);
+    persistNotes();
     if (currentNoteId === id) {
         if (notes.length > 0) openNote(notes[notes.length - 1].id);
         else { currentNoteId = null; renderTabs(); }
@@ -255,7 +226,7 @@ function closeNote(id) {
 }
 
 function renderTabs() {
-    tabsContainer.innerHTML = ''; 
+    tabsContainer.innerHTML = '';
     if (notes.length === 0) {
         emptyState.classList.remove('hidden');
         noteEditor.classList.add('hidden');
@@ -264,101 +235,89 @@ function renderTabs() {
     notes.forEach((note, index) => {
         const tab = document.createElement('div');
         tab.className = `tab ${note.id === currentNoteId ? 'tab-active' : ''}`;
-        let tabContent = '';
-        if (note.favorite) tabContent += '<span class="tab-star">★</span>';
-        const shortcutNum = `<small style="opacity:0.5; margin-right:5px;">${index + 1}</small>`;
-        const title = note.title.trim() === '' ? `${dictionary[currentLang]['default_note_name']} ${index + 1}` : note.title;
-        tabContent += shortcutNum + title;
-        const titleSpan = document.createElement('span');
-        titleSpan.innerHTML = tabContent;
-        tab.appendChild(titleSpan);
-        const btnCloseTab = document.createElement('span');
-        btnCloseTab.className = 'tab-close';
-        btnCloseTab.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';
-        btnCloseTab.onclick = (e) => { e.stopPropagation(); closeNote(note.id); };
-        tab.appendChild(btnCloseTab);
+        let content = note.favorite ? '<span class="tab-star">★</span>' : '';
+        content += `<small style="opacity:0.5; margin-right:5px;">${index + 1}</small>`;
+        content += note.title.trim() === '' ? `${dictionary[currentLang]['default_note_name']} ${index + 1}` : note.title;
+        tab.innerHTML = `<span>${content}</span>`;
+        const closeBtn = document.createElement('span');
+        closeBtn.className = 'tab-close';
+        closeBtn.innerHTML = '✕';
+        closeBtn.onclick = (e) => { e.stopPropagation(); closeNote(note.id); };
+        tab.appendChild(closeBtn);
         tab.onclick = () => openNote(note.id);
         tabsContainer.appendChild(tab);
     });
 }
 
-btnFavorite.addEventListener('click', () => {
-    const note = notes.find(n => n.id === currentNoteId);
-    if (!note) return;
-    note.favorite = !note.favorite;
-    btnFavorite.classList.toggle('icon-btn-favorite', note.favorite);
-    renderTabs();
-});
-
-btnHistory.addEventListener('click', () => {
-    const note = notes.find(n => n.id === currentNoteId);
-    if (!note) return;
-    if (note.history.length === 0) alert(dictionary[currentLang]['alert_no_history']);
-    else {
-        const log = note.history.slice(-5).map((h, i) => `${i + 1}. ${h.date}`).join('\n');
-        alert(`${dictionary[currentLang]['alert_history_title']}\n\n${log}`);
-    }
-});
-
-btnUnlock.addEventListener('click', () => {
-    const note = notes.find(n => n.id === currentNoteId);
-    if (inputUnlock.value === note.password) unlockInterface(note);
-    else { alert(dictionary[currentLang]['alert_wrong_pass']); inputUnlock.focus(); }
-});
-
-inputUnlock.addEventListener('keypress', (e) => { if (e.key === 'Enter') btnUnlock.click(); });
-
-btnLock.addEventListener('click', () => {
-    const note = notes.find(n => n.id === currentNoteId);
-    if (!note || !passwordOverlay.classList.contains('hidden')) return;
-    modalPassword.classList.remove('hidden');
-    inputNewPassword.value = '';
-    inputNewPassword.focus();
-    if (note.password) {
-        modalPasswordTitle.textContent = dictionary[currentLang]['remove_pass_title'];
-        modalPasswordDesc.textContent = dictionary[currentLang]['remove_pass_desc'];
-    } else {
-        modalPasswordTitle.textContent = dictionary[currentLang]['modal_lock_title'];
-        modalPasswordDesc.textContent = dictionary[currentLang]['modal_lock_desc'];
-    }
-});
-
-btnCancelPassword.addEventListener('click', () => {
-    modalPassword.classList.add('hidden');
-    textEditor.focus();
-});
-
-btnSavePassword.addEventListener('click', () => {
-    const note = notes.find(n => n.id === currentNoteId);
-    const typedPassword = inputNewPassword.value;
-    if (note.password) {
-        if (typedPassword === note.password) {
-            note.password = null;
-            btnLock.classList.remove('icon-btn-favorite');
-            modalPassword.classList.add('hidden');
-            textEditor.focus();
-        } else { alert(dictionary[currentLang]['alert_wrong_pass']); inputNewPassword.focus(); }
-    } else {
-        if (typedPassword.trim() === '') { alert(dictionary[currentLang]['alert_empty_pass']); return; }
-        note.password = typedPassword;
-        btnLock.classList.add('icon-btn-favorite');
-        modalPassword.classList.add('hidden');
-        openNote(note.id); 
-    }
-});
-
 function formatText(text) {
-    return text.replace(/</g, "&lt;").replace(/>/g, "&gt;") 
+    return text.replace(/</g, "&lt;").replace(/>/g, "&gt;")
         .replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')
         .replace(/__(.*?)__/g, '<u>$1</u>')
         .replace(/\*(.*?)\*/g, '<i>$1</i>')
         .replace(/~~(.*?)~~/g, '<del>$1</del>')
         .replace(/^# (.*$)/gim, '<h1>$1</h1>')
-        .replace(/^- (.*$)/gim, '<li>$1</li>')
         .replace(/\n/g, '<br>');
 }
 
-btnPreview.addEventListener('click', () => {
+function updateCounter() {
+    const text = textEditor.value;
+    const words = text.trim() === '' ? 0 : text.trim().split(/\s+/).length;
+    wordCounter.textContent = `${words} ${dictionary[currentLang]['word_count']} | ${text.length} ${dictionary[currentLang]['char_count']}`;
+}
+
+btnSettings.onclick = () => {
+    screenNotepad.classList.replace('screen-active', 'screen-hidden');
+    screenSettings.classList.replace('screen-hidden', 'screen-active');
+    ipcRenderer.send('settings-mode', true);
+};
+
+btnCloseSettings.onclick = () => {
+    screenSettings.classList.replace('screen-active', 'screen-hidden');
+    screenNotepad.classList.replace('screen-hidden', 'screen-active');
+    ipcRenderer.send('settings-mode', false);
+};
+
+ipcRenderer.on('update-available', (e, info) => {
+    updateVersions.textContent = `${info.currentVersion} ➔ ${info.latestVersion}`;
+    updateBanner.classList.remove('hidden');
+});
+
+ipcRenderer.on('update-ready', () => {
+    btnUpdateDownload.textContent = currentLang === 'en' ? 'Restart & Install' : 'Reiniciar e Instalar';
+    btnUpdateDownload.dataset.ready = "true";
+    btnUpdateDownload.style.backgroundColor = "#28a745";
+});
+
+btnUpdateDownload.onclick = () => {
+    if (btnUpdateDownload.dataset.ready === "true") ipcRenderer.send('install-update');
+    else {
+        btnUpdateDownload.textContent = currentLang === 'en' ? 'Downloading...' : 'Baixando...';
+        btnUpdateDownload.disabled = true;
+        ipcRenderer.send('install-update');
+    }
+};
+
+btnUpdateClose.onclick = () => updateBanner.classList.add('hidden');
+
+textEditor.addEventListener('input', () => {
+    const note = notes.find(n => n.id === currentNoteId);
+    if (note) {
+        note.content = textEditor.value;
+        updateCounter();
+        persistNotes();
+    }
+});
+
+noteTitle.addEventListener('input', () => {
+    const note = notes.find(n => n.id === currentNoteId);
+    if (note) {
+        note.title = noteTitle.value;
+        renderTabs();
+        persistNotes();
+    }
+});
+
+btnPreview.onclick = () => {
     isPreviewMode = !isPreviewMode;
     const note = notes.find(n => n.id === currentNoteId);
     if (isPreviewMode) {
@@ -370,127 +329,20 @@ btnPreview.addEventListener('click', () => {
         textEditor.classList.remove('hidden');
         textEditor.focus();
     }
-});
+};
 
-function updateCounter() {
-    const text = textEditor.value;
-    const words = text.trim() === '' ? 0 : text.trim().split(/\s+/).length;
-    wordCounter.textContent = `${words} ${dictionary[currentLang]['word_count']} | ${text.length} ${dictionary[currentLang]['char_count']}`;
-}
-
-btnAddTab.addEventListener('click', createNote);
-btnBigAdd.addEventListener('click', createNote);
-
-noteTitle.addEventListener('input', (e) => {
-    const note = notes.find(n => n.id === currentNoteId);
-    if (note) { note.title = e.target.value; renderTabs(); }
-});
-
-textEditor.addEventListener('input', (e) => {
-    const note = notes.find(n => n.id === currentNoteId);
-    if (note) {
-        note.content = e.target.value;
-        updateCounter();
-        if (note.content.length % 50 === 0 && note.content.length > 0) {
-            note.history.push({ date: new Date().toLocaleString() });
-            note.date = new Date().toLocaleString(); 
-            noteDate.textContent = note.date;
-        }
+searchInput.addEventListener('input', () => {
+    const query = searchInput.value.toLowerCase();
+    const content = textEditor.value.toLowerCase();
+    if (!query) { searchResults.textContent = "0/0"; return; }
+    const count = (content.match(new RegExp(query, 'g')) || []).length;
+    searchResults.textContent = `${count} matches`;
+    const index = content.indexOf(query);
+    if (index !== -1) {
+        textEditor.focus();
+        textEditor.setSelectionRange(index, index + query.length);
     }
 });
-
-tagButtons.forEach(btn => {
-    btn.addEventListener('click', () => {
-        const note = notes.find(n => n.id === currentNoteId);
-        if (!note) return;
-        const tagId = btn.getAttribute('data-tag');
-        if (note.tags.includes(tagId)) {
-            note.tags = note.tags.filter(t => t !== tagId);
-            btn.classList.remove('tag-toggle-active');
-        } else {
-            note.tags.push(tagId);
-            btn.classList.add('tag-toggle-active');
-        }
-    });
-});
-
-document.addEventListener('keydown', (e) => {
-    if (e.key === 'F12' || ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key.toLowerCase() === 'i' || e.key.toLowerCase() === 'c'))) {
-        e.preventDefault();
-        return;
-    }
-
-    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
-        e.preventDefault();
-        const note = notes.find(n => n.id === currentNoteId);
-        
-        if (note && passwordOverlay.classList.contains('hidden')) {
-            ipcRenderer.invoke('file-save', note.title, note.content).then(success => {
-                if (success) console.log('File Saved');
-            });
-        }
-    }
-
-    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'o') {
-        e.preventDefault();
-        ipcRenderer.invoke('file-open').then(fileData => {
-            if (fileData) {
-                if (notes.length >= 9) {
-                    alert(dictionary[currentLang]['alert_limit']);
-                    return;
-                }
-                const newNote = {
-                    id: Date.now(),
-                    title: fileData.title,
-                    content: fileData.content,
-                    date: new Date().toLocaleString(),
-                    color: '#333333',
-                    tags: [],
-                    favorite: false,
-                    password: null,
-                    history: []
-                };
-                notes.push(newNote);
-                openNote(newNote.id);
-                renderTabs();
-            }
-        });
-    }
-
-    if ((e.ctrlKey || e.metaKey) && e.key >= '1' && e.key <= '9') {
-        const index = parseInt(e.key) - 1; 
-        if (notes[index]) { e.preventDefault(); openNote(notes[index].id); }
-    }
-    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 't') { e.preventDefault(); createNote(); }
-    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'w') {
-        e.preventDefault();
-        if (currentNoteId !== null) closeNote(currentNoteId);
-    }
-});
-
-document.getElementById('btn-close').addEventListener('click', () => ipcRenderer.send('window-close'));
-document.getElementById('btn-minimize').addEventListener('click', () => ipcRenderer.send('window-minimize'));
-document.getElementById('btn-pin').addEventListener('click', () => ipcRenderer.send('window-pin'));
-ipcRenderer.on('pin-status', (e, isPinned) => document.getElementById('btn-pin').classList.toggle('window-btn-active', isPinned));
-
-applyTranslation(currentLang);
-textEditor.addEventListener('paste', (e) => {
-    const paste = (e.clipboardData || window.clipboardData).getData('text');
-    const ytRegex = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]+)/g;
-    
-    if (ytRegex.test(paste)) {
-        e.preventDefault();
-        const newText = paste.replace(ytRegex, (match) => `[🎥 Video: ${match}](${match})`);
-        const start = textEditor.selectionStart;
-        const end = textEditor.selectionEnd;
-        textEditor.value = textEditor.value.substring(0, start) + newText + textEditor.value.substring(end);
-        const note = notes.find(n => n.id === currentNoteId);
-        if (note) { note.content = textEditor.value; persistNotes(); }
-    }
-});
-
-const searchBar = document.getElementById('search-bar');
-const searchInput = document.getElementById('search-input');
 
 document.addEventListener('keydown', (e) => {
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'f') {
@@ -500,43 +352,59 @@ document.addEventListener('keydown', (e) => {
             if (!searchBar.classList.contains('hidden')) searchInput.focus();
         }
     }
-});
-
-searchInput.addEventListener('input', () => {
-    const query = searchInput.value.toLowerCase();
-    const content = textEditor.value.toLowerCase();
-    if (!query) { document.getElementById('search-results').textContent = "0/0"; return; }
-    
-    const count = (content.match(new RegExp(query, 'g')) || []).length;
-    document.getElementById('search-results').textContent = `${count} matches`;
-    
-    const index = content.indexOf(query);
-    if (index !== -1) {
-        textEditor.focus();
-        textEditor.setSelectionRange(index, index + query.length);
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 't') createNote();
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+        const note = notes.find(n => n.id === currentNoteId);
+        if (note) ipcRenderer.invoke('file-save', note.title, note.content);
     }
 });
 
-document.getElementById('btn-close-search').onclick = () => searchBar.classList.add('hidden');
-
-document.getElementById('btn-pdf').onclick = () => {
+btnUnlock.onclick = () => {
     const note = notes.find(n => n.id === currentNoteId);
-    if (note) {
-        if (!isPreviewMode) btnPreview.click();
-        
-        setTimeout(() => {
-            ipcRenderer.invoke('export-pdf', note.title || 'Note').then(success => {
-                if (success) console.log('PDF Exported');
-            });
-        }, 100);
+    if (inputUnlock.value === note.password) unlockInterface(note);
+    else alert(dictionary[currentLang]['alert_wrong_pass']);
+};
+
+btnLock.onclick = () => {
+    const note = notes.find(n => n.id === currentNoteId);
+    if (!note) return;
+    modalPassword.classList.remove('hidden');
+    inputNewPassword.value = '';
+    inputNewPassword.focus();
+    const isRemoving = note.password !== null;
+    modalPasswordTitle.textContent = dictionary[currentLang][isRemoving ? 'remove_pass_title' : 'modal_lock_title'];
+};
+
+btnSavePassword.onclick = () => {
+    const note = notes.find(n => n.id === currentNoteId);
+    const pass = inputNewPassword.value;
+    if (note.password) {
+        if (pass === note.password) { note.password = null; modalPassword.classList.add('hidden'); unlockInterface(note); persistNotes(); }
+        else alert(dictionary[currentLang]['alert_wrong_pass']);
+    } else {
+        if (!pass.trim()) return alert(dictionary[currentLang]['alert_empty_pass']);
+        note.password = pass;
+        modalPassword.classList.add('hidden');
+        openNote(note.id);
+        persistNotes();
     }
 };
 
-ipcRenderer.on('external-file-open', (event, data) => {
-    const existing = notes.find(n => n.title === data.title && n.content === data.content);
-    if (existing) {
-        openNote(existing.id);
-    } else {
-        createNote(data);
+btnCancelPassword.onclick = () => modalPassword.classList.add('hidden');
+
+btnPdf.onclick = () => {
+    const note = notes.find(n => n.id === currentNoteId);
+    if (note) {
+        if (!isPreviewMode) btnPreview.click();
+        setTimeout(() => ipcRenderer.invoke('export-pdf', note.title), 200);
     }
-});
+};
+
+document.getElementById('btn-close').onclick = () => ipcRenderer.send('window-close');
+document.getElementById('btn-minimize').onclick = () => ipcRenderer.send('window-minimize');
+document.getElementById('btn-pin').onclick = () => ipcRenderer.send('window-pin');
+btnGithub.onclick = () => shell.openExternal('https://github.com/aeeryin/Simplepad');
+btnAddTab.onclick = createNote;
+btnBigAdd.onclick = createNote;
+
+applyTranslation(currentLang);
