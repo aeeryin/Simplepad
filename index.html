@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Simplepad</title>
     <link rel="stylesheet" href="style.css">
 </head>
@@ -19,21 +20,29 @@
     </div>
 
     <div class="app-body">
-        
+        <div id="update-banner" class="update-banner hidden">
+            <div class="update-text">
+                <span data-i18n="update_available">New update available!</span>
+                <strong id="update-versions">v1.0.0 ➔ v1.0.1</strong>
+            </div>
+            <div style="display: flex; gap: 8px;">
+                <button id="btn-update-download" class="action-btn" style="padding: 4px 10px; font-size: 11px;" data-i18n="btn_download_update">Download</button>
+                <button id="btn-update-close" class="icon-btn" style="padding: 2px;">✕</button>
+            </div>
+        </div>
+
         <div id="screen-notepad" class="screen-active">
             <div class="tabs-bar">
                 <div id="tabs-container" class="tabs-container"></div>
                 <button id="btn-add-tab" class="btn-add-tab" title="New Note">
                     <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                 </button>
-<button id="btn-settings" class="theme-btn" title="Settings">
-    <svg class="icon-gear" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
-        <rect width="256" height="256" fill="none"/>
-        <circle cx="128" cy="128" r="40" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/>
-        <path d="M41.43,178.09A99.14,99.14,0,0,1,31.36,153.8l16.78-21a81.59,81.59,0,0,1,0-9.64l-16.77-21a99.43,99.43,0,0,1,10.05-24.3l26.71-3a81,81,0,0,1,6.81-6.81l3-26.7A99.14,99.14,0,0,1,102.2,31.36l21,16.78a81.59,81.59,0,0,1,9.64,0l21-16.77a99.43,99.43,0,0,1,24.3,10.05l3,26.71a81,81,0,0,1,6.81,6.81l26.7,3a99.14,99.14,0,0,1,10.07,24.29l-16.78,21a81.59,81.59,0,0,1,0,9.64l16.77,21a99.43,99.43,0,0,1-10,24.3l-26.71,3a81,81,0,0,1-6.81,6.81l-3,26.7a99.14,99.14,0,0,1-24.29,10.07l-21-16.78a81.59,81.59,0,0,1-9.64,0l-21,16.77a99.43,99.43,0,0,1-24.3-10l-3-26.71a81,81,0,0,1-6.81-6.81Z" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/>
-    </svg>
-</button>
-
+                <button id="btn-settings" class="theme-btn" title="Settings">
+                    <svg class="icon-gear" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+                        <circle cx="128" cy="128" r="40" fill="none" stroke="currentColor" stroke-width="16"/>
+                        <path d="M41.43,178.09A99.14,99.14,0,0,1,31.36,153.8l16.78-21a81.59,81.59,0,0,1,0-9.64l-16.77-21a99.43,99.43,0,0,1,10.05-24.3l26.71-3a81,81,0,0,1,6.81-6.81l3-26.7A99.14,99.14,0,0,1,102.2,31.36l21,16.78a81.59,81.59,0,0,1,9.64,0l21-16.77a99.43,99.43,0,0,1,24.3,10.05l3,26.71a81,81,0,0,1,6.81,6.81l26.7,3a99.14,99.14,0,0,1,10.07,24.29l-16.78,21a81.59,81.59,0,0,1,0-9.64l16.77,21a99.43,99.43,0,0,1-10,24.3l-26.71,3a81,81,0,0,1-6.81,6.81l-3,26.7a99.14,99.14,0,0,1-24.29,10.07l-21-16.78a81.59,81.59,0,0,1-9.64,0l-21,16.77a99.43,99.43,0,0,1-24.3-10l-3-26.71a81,81,0,0,1-6.81-6.81Z" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/>
+                    </svg>
+                </button>
             </div>
 
             <div class="main-content">
@@ -42,18 +51,6 @@
                         <svg viewBox="0 0 24 24" width="48" height="48" stroke="currentColor" stroke-width="2" fill="none"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                     </button>
                     <p><span data-i18n="empty_title">Create new note</span> <br><small>Ctrl + T</small></p>
-                </div>
-
-                <div id="modal-password" class="password-overlay hidden" style="z-index: 150;">
-                    <div class="modal-box">
-                        <h3 id="modal-password-title" data-i18n="modal_lock_title">Lock Note</h3>
-                        <p id="modal-password-desc" data-i18n="modal_lock_desc" style="font-size: 12px; color: var(--text-muted); margin-bottom: 15px;">Password will protect this note only.</p>
-                        <input type="password" id="input-new-password" class="meta-input" data-i18n="input_pass_placeholder" placeholder="Enter password...">
-                        <div style="display:flex; justify-content: center; gap:10px; margin-top:15px;">
-                            <button id="btn-save-password" class="action-btn" data-i18n="btn_confirm">Confirm</button>
-                            <button id="btn-cancel-password" class="action-btn action-btn-outline" data-i18n="btn_cancel">Cancel</button>
-                        </div>
-                    </div>
                 </div>
 
                 <div id="note-editor" class="note-editor hidden">
@@ -67,48 +64,44 @@
                         </div>
                     </div>
 
-                    <div class="note-header" id="note-header-content">
+                    <div class="note-header">
                         <input type="text" id="note-title" class="note-title" data-i18n="note_title_placeholder" placeholder="Untitled...">
                         <div class="note-meta">
                             <span class="meta-badge date"><span id="note-date">--</span></span>
-                            
                             <div class="tags-wrapper">
-                                <div id="tags-list" class="tags-list">
-                                    <button class="tag-toggle" data-tag="Study">Study</button>
-                                    <button class="tag-toggle" data-tag="Work">Work</button>
-                                    <button class="tag-toggle" data-tag="Idea">Idea</button>
-                                </div>
+                                <button class="tag-toggle" data-tag="Study">Study</button>
+                                <button class="tag-toggle" data-tag="Work">Work</button>
+                                <button class="tag-toggle" data-tag="Idea">Idea</button>
                             </div>
-                            
                             <input type="color" id="note-color" class="meta-color" value="#333333">
                             
                             <div class="meta-actions-right">
-                                <button id="btn-pdf" class="icon-btn hover-eye" title="Export PDF">
-    <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-</button>
-
-<div id="search-bar" class="search-bar hidden">
-    <input type="text" id="search-input" placeholder="Find in note...">
-    <span id="search-results">0/0</span>
-    <button id="btn-close-search">✕</button>
-</div>
+                                <button id="btn-pdf" class="icon-btn" title="Export PDF">
+                                    <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+                                </button>
                                 <button id="btn-favorite" class="icon-btn hover-star">
-                                    <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><polygon class="star-shape" points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                                    <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
                                 </button>
                                 <button id="btn-lock" class="icon-btn hover-lock">
-                                    <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path class="lock-shackle" d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                                    <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
                                 </button>
-                                <button id="btn-history" class="icon-btn hover-clock">
-                                    <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><circle cx="12" cy="12" r="10"></circle><polyline class="clock-hands" points="12 6 12 12 16 14"></polyline></svg>
+                                <button id="btn-history" class="icon-btn">
+                                    <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
                                 </button>
-                                <button id="btn-preview" class="icon-btn hover-eye">
-                                    <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><g class="eye-group"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></g></svg>
+                                <button id="btn-preview" class="icon-btn">
+                                    <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
                                 </button>
                             </div>
                         </div>
                     </div>
+
+                    <div id="search-bar" class="search-bar hidden">
+                        <input type="text" id="search-input" placeholder="Find in note...">
+                        <span id="search-results">0 matches</span>
+                        <button id="btn-close-search" class="icon-btn" style="color: var(--text-muted);">✕</button>
+                    </div>
                     
-                    <textarea id="text-editor" data-i18n="note_placeholder" placeholder="Use **Bold**..."></textarea>
+                    <textarea id="text-editor" data-i18n="note_placeholder" placeholder="Type here..."></textarea>
                     <div id="text-preview" class="formatted-preview hidden"></div>
                     
                     <div class="editor-footer">
@@ -120,15 +113,14 @@
 
         <div id="screen-settings" class="screen-hidden">
             <div class="settings-content">
-                
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
                     <div style="display: flex; align-items: center; gap: 10px;">
-                        <h2 data-i18n="title_settings" style="margin: 0; line-height: 1;">Settings</h2>
-                        <button id="btn-github" class="icon-btn" title="GitHub" style="width: 28px; height: 28px; padding: 0; display: flex; align-items: center; justify-content: center; border: 1px solid var(--border-color);">
-                            <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg>
+                        <h2 data-i18n="title_settings">Settings</h2>
+                        <button id="btn-github" class="icon-btn" title="GitHub">
+                            <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg>
                         </button>
                     </div>
-                    <button id="btn-close-settings" class="window-btn window-btn-close" style="font-size: 20px;">✕</button>
+                    <button id="btn-close-settings" class="window-btn window-btn-close">✕</button>
                 </div>
                 
                 <div class="setting-item">
@@ -143,16 +135,13 @@
                 </div>
                 
                 <div class="setting-item">
-                    <div>
-                        <span data-i18n="lbl_lang">Language</span>
-                        <small data-i18n="desc_lang">Change application interface language.</small>
-                    </div>
+                    <div><span data-i18n="lbl_lang">Language</span></div>
                     <select id="set-lang" class="meta-select">
-                        <option value="en" selected>English</option>
+                        <option value="en">English</option>
                         <option value="pt">Português (BR)</option>
                     </select>
                 </div>
-                
+
                 <div class="setting-item">
                     <div><span data-i18n="lbl_autosave">Auto-save</span></div>
                     <label class="switch">
@@ -160,62 +149,26 @@
                         <div class="slider"><div class="slider-knob"></div></div>
                     </label>
                 </div>
-                
-                <div class="setting-item">
-                    <div>
-                        <span data-i18n="lbl_markdown">Markdown Mode</span>
-                        <small data-i18n="desc_markdown">Enable quick text formatting.</small>
-                    </div>
-                    <label class="switch">
-                        <input type="checkbox" checked>
-                        <div class="slider"><div class="slider-knob"></div></div>
-                    </label>
-                </div>
-                
-                <div class="setting-item">
-                    <div><span data-i18n="lbl_fontsize">Font Size</span></div>
-                    <select class="meta-select">
-                        <option>14px</option>
-                        <option selected>15px</option>
-                        <option>18px</option>
-                    </select>
-                </div>
-                
-                <div class="setting-item">
-                    <div><span data-i18n="lbl_anim">Enable Animations</span></div>
-                    <label class="switch">
-                        <input type="checkbox" checked>
-                        <div class="slider"><div class="slider-knob"></div></div>
-                    </label>
-                </div>
-                
-                <div class="setting-item">
-                    <div><span data-i18n="lbl_accent">Accent Color</span></div>
-                    <input type="color" class="meta-color" value="#007acc">
-                </div>
-                
-                <div class="setting-item" style="border-bottom: none; flex-direction: column; align-items: flex-start; gap: 10px;">
-                    <div><span data-i18n="desc_backup" style="color: var(--text-muted); font-size: 13px;">Manage saved data</span></div>
+
+                <div class="setting-item" style="border-bottom: none; margin-top: 20px;">
                     <div style="display: flex; gap: 10px;">
                         <button class="action-btn action-btn-outline" data-i18n="btn_export">Export Backup</button>
                         <button class="action-btn action-btn-danger" data-i18n="btn_delete">Delete All</button>
                     </div>
                 </div>
-                
             </div>
         </div>
-        
-        <div id="update-banner" class="update-banner hidden">
-            <div class="update-text">
-                <span data-i18n="update_available">New update available!</span>
-                <strong id="update-versions">v1.0.0 ➔ v1.0.1</strong>
-            </div>
-            <div style="display: flex; gap: 8px;">
-                <button id="btn-update-download" class="action-btn" style="padding: 4px 10px; font-size: 12px;" data-i18n="btn_download_update">Download</button>
-                <button id="btn-update-close" class="icon-btn" style="padding: 2px;">✕</button>
+
+        <div id="modal-password" class="password-overlay hidden" style="z-index: 150;">
+            <div class="modal-box">
+                <h3 id="modal-password-title" data-i18n="modal_lock_title">Lock Note</h3>
+                <input type="password" id="input-new-password" class="meta-input" placeholder="Enter password...">
+                <div style="display:flex; justify-content: center; gap:10px; margin-top:15px;">
+                    <button id="btn-save-password" class="action-btn" data-i18n="btn_confirm">Confirm</button>
+                    <button id="btn-cancel-password" class="action-btn action-btn-outline" data-i18n="btn_cancel">Cancel</button>
+                </div>
             </div>
         </div>
-        
     </div>
 
     <script src="renderer.js"></script>

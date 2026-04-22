@@ -793,3 +793,15 @@ textarea::placeholder {
     color: var(--text-muted);
     cursor: pointer;
 }
+.update-banner {
+    background: #616161;
+    color: white;
+    padding: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+    font-weight: bold;
+    z-index: 9999;
+}
+.hidden { display: none !important; }

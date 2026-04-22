@@ -37,13 +37,18 @@ function createWindow() {
         webPreferences: {
             nodeIntegration: true,
             contextIsolation: false,
-            devTools: false
+            devTools: false 
         }
     });
 
     mainWindow.loadFile('index.html');
 
     mainWindow.webContents.on('did-finish-load', () => {
+        mainWindow.webContents.send('update-available', {
+            currentVersion: '1.0.0',
+            latestVersion: '1.0.2'
+        });
+
         const filePath = process.argv.find(arg => arg.endsWith('.txt'));
         if (filePath) {
             openExternalFile(filePath);
@@ -107,7 +112,6 @@ function createWindow() {
                 fs.writeFileSync(filePath, data);
                 return true;
             } catch (error) {
-                console.error(error);
                 return false;
             }
         }
@@ -169,7 +173,6 @@ function animateWindow(win, targetWidth, duration) {
     }, 16);
 }
 
-// Auto-Updater
 autoUpdater.on('update-available', (info) => {
     mainWindow.webContents.send('update-available', {
         currentVersion: app.getVersion(),

@@ -67,9 +67,10 @@ setTheme.addEventListener('change', (e) => {
     else document.body.classList.remove('light-theme');
 });
 
-ipcRenderer.on('update-available', (event, info) => {
-    updateVersions.textContent = `v${info.currentVersion} ➔ v${info.latestVersion}`;
-    updateBanner.classList.remove('hidden');
+ipcRenderer.on('update-available', (e, info) => {
+    console.log("Recebi o evento de update!"); // Veja se isso aparece no Console (Ctrl+Shift+I)
+    document.getElementById('update-versions').textContent = `${info.currentVersion} ➔ ${info.latestVersion}`;
+    document.getElementById('update-banner').classList.remove('hidden');
 });
 
 ipcRenderer.on('update-ready', () => {
