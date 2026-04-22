@@ -3,6 +3,11 @@ const path = require('path');
 const fs = require('fs');
 const { autoUpdater } = require('electron-updater');
 
+autoUpdater.logger = require('electron-log');
+autoUpdater.autoDownload = false;
+autoUpdater.autoInstallOnAppQuit = true;
+autoUpdater.provider = 'github';
+
 let mainWindow;
 let resizeInterval;
 const dataPath = path.join(app.getPath('userData'), 'notes_data.json');
@@ -44,11 +49,6 @@ function createWindow() {
     mainWindow.loadFile('index.html');
 
     mainWindow.webContents.on('did-finish-load', () => {
-        mainWindow.webContents.send('update-available', {
-            currentVersion: '1.0.1',
-            latestVersion: '1.0.2'
-        });
-
         const filePath = process.argv.find(arg => arg.endsWith('.txt'));
         if (filePath) {
             openExternalFile(filePath);
@@ -63,7 +63,7 @@ function createWindow() {
     });
 
     ipcMain.handle('get-app-version', () => {
-    return app.getVersion();
+        return app.getVersion();
     });
 
     ipcMain.handle('save-stored-notes', (event, notes) => {
@@ -188,10 +188,16 @@ autoUpdater.on('update-downloaded', () => {
     mainWindow.webContents.send('update-ready');
 });
 
+autoUpdater.on('error', (err) => {
+    console.error('AutoUpdater Error:', err);
+});
+
 ipcMain.on('install-update', () => {
-    autoUpdater.downloadUpdate().then(() => {
-        autoUpdater.quitAndInstall();
-    });
+    autoUpdater.quitAndInstall();
+});
+
+ipcMain.on('start-download', () => {
+    autoUpdater.downloadUpdate();
 });
 
 app.on('window-all-closed', () => {

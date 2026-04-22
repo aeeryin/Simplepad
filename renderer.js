@@ -289,11 +289,12 @@ ipcRenderer.on('update-ready', () => {
 });
 
 btnUpdateDownload.onclick = () => {
-    if (btnUpdateDownload.dataset.ready === "true") ipcRenderer.send('install-update');
-    else {
+    if (btnUpdateDownload.dataset.ready === "true") {
+        ipcRenderer.send('install-update');
+    } else {
         btnUpdateDownload.textContent = currentLang === 'en' ? 'Downloading...' : 'Baixando...';
         btnUpdateDownload.disabled = true;
-        ipcRenderer.send('install-update');
+        ipcRenderer.send('start-download');
     }
 };
 
